@@ -67,7 +67,7 @@ const postWebhook = (req, res) => {
         } else if (webhook_event.postback) {
           handlePostback(sender_psid, webhook_event.postback);
         } else if (webhook_event.messaging_customer_information) {
-          console.warn('found user registere', JSON.stringify(webhook_event.messaging_customer_information))
+          console.warn('found user shipping address', JSON.stringify(webhook_event.messaging_customer_information))
         } else {
           console.error('webhook event not found')
         }

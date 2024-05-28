@@ -233,7 +233,7 @@ const requireCustomerInfoResponse = {
         "payload": {
             "template_type": "customer_information",
             "countries": [
-                "VN"
+                // "VN"
             ],
             "contact_overrides": [
                 {
