@@ -57,7 +57,8 @@ const postWebhook = (req, res) => {
       let sender_psid = webhook_event.sender?.id;
       if (sender_psid) {
         console.log('Sender PSID: ' + sender_psid);
-        let canMakeSeen = true
+        await markSeen(sender_psid)
+        await callSetTypingOn(sender_psid)
 
         // Check if the event is a message or postback and
         // pass the event to the appropriate handler function
@@ -66,14 +67,10 @@ const postWebhook = (req, res) => {
         } else if (webhook_event.postback) {
           handlePostback(sender_psid, webhook_event.postback);
         } else if (webhook_event.messaging_customer_information) {
-          console.warn('found user shipping address', JSON.stringify(webhook_event.messaging_customer_information))
+          console.dir('found user shipping address', JSON.stringify(webhook_event.messaging_customer_information))
+          callSendAPI(sender_psid, { "text": "Cám ơn bạn, nhà mình sẽ liên hệ với bạn trong thời gian sớm nhất có thể 🥰" });
         } else {
           console.error('webhook event not found')
-          canMakeSeen = false
-        }
-        if (canMakeSeen) {
-          await markSeen(sender_psid)
-          await callSetTypingOn(sender_psid)
         }
       } else {
         //group_feed => private reply 
