@@ -62,7 +62,7 @@ const postWebhook = (req, res) => {
 
         // Check if the event is a message or postback and
         // pass the event to the appropriate handler function
-        if (webhook_event.message) {
+        if (webhook_event.message?.text) {
           handleMessage(sender_psid, webhook_event.message);
         } else if (webhook_event.postback) {
           handlePostback(sender_psid, webhook_event.postback);
@@ -71,8 +71,9 @@ const postWebhook = (req, res) => {
           callSendAPI(sender_psid, { "text": "Cám ơn bạn, nhà mình sẽ liên hệ với bạn trong thời gian sớm nhất có thể 🥰" });
         } else {
           console.error('webhook event not found')
+          handleMessage(sender_psid, { "text": "Xin chào 🤓" });
         }
-      } else {
+      } else if (webhook_event.field === 'group_feed') {
         //group_feed => private reply 
         //https://developers.facebook.com/docs/messenger-platform/discovery/private-replies
         const comment_id = webhook_event.from.id
