@@ -2,31 +2,34 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import viewEngine from './configs/viewEngine'
 import webRoutes from './routes/web'
-// import localtunnel from 'localtunnel'
+import localtunnel from 'localtunnel'
 
 let app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
+let port = process.env.PORT || 8080
+let localtunnelPort = 8081
+
 //config view engine
-viewEngine(app)
+// viewEngine(app)
 
 //config web routes
 webRoutes(app)
 
-
-let port = process.env.PORT || 8080
-
-app.listen(port, () => {
+app.listen(localtunnelPort, () => {
     console.log('express ready')
 })
 
-// localtunnel({ subdomain: 'messengerbottest', port: 8080 })
-//     .then(tunnel => {
-//         console.log(`Localtunnel available at: ${tunnel.url}:${port}`);
-//     }).catch(error => {
-//         console.log('tunnel error', error)
-//     })
+localtunnel({
+    subdomain: 'messengerbot',
+    port: localtunnelPort,
+}).then(tunnel => {
+    console.log(`Localtunnel available at: ${tunnel.url}`);
+
+}).catch(error => {
+    console.log('tunnel error', error)
+})
 
 // Verify that the callback came from Facebook.
 const verifyRequestSignature = (req, res, buf) => {

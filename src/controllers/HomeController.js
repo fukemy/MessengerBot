@@ -11,9 +11,29 @@ import {
   WHAT_IS,
   DIFFERENCE_BETWEEN
 } from "../public/messageAssets";
+import { text } from "body-parser";
+const { Text2Speech } = require('better-node-gtts')
+const path = require("path")
+const gtts = new Text2Speech('vi')
+const fs = require("fs");
+
+const convert = (req, res) => {
+  const { text } = req.body
+  let pathToSave = path.join(__dirname, "result.mp3")
+  gtts.save(pathToSave, text).then(() => {
+    res.send('ok')
+  }).catch(error => {
+    console.log('error', error)
+    res.status(400).send(error)
+  })
+
+
+}
 
 const getHomePage = (req, res) => {
-  return res.render('homepage.ejs')
+  // return res.render('homepage.ejs', { gtts: gtts, path: path })
+  const homepage = process.cwd() + '/src/views/homepage.html'
+  return res.sendFile(homepage)
 }
 
 const getWebhook = (req, res) => {
@@ -130,7 +150,25 @@ async function handlePostback(sender_psid, received_postback) {
     response = { 'text': 'Chưa có link shoppe' }
   } else if (payload == 'WHAT_IS') {
     await sleep(1000)
-    response = { 'text': WHAT_IS }
+    // response = { 'text': WHAT_IS }
+    response = {
+      "attachment": {
+        "type": "template",
+        "payload": {
+          "template_type": "button",
+          "text": "I would love to hear your feedback on your last order. Could you fill out this quiz? 🤔",
+          "buttons": [
+            {
+              "type": "web_url",
+              "url": "https://zerochat.us/embedded/chat?c=eyJ0aGVtZSI6ImxpZ2h0IiwiYWdlbnRJZCI6IjVIRDJKZDA0NjBPTS1rLW83WTlOcFEiLCJhZ2VudE5vZGVBZGRyZXNzIjoiaHR0cHM6Ly9hZ25vZGUxLnplcm9jaGF0LnVzIn0%3D",
+              "webview_height_ratio": "full",
+              "messenger_extensions": false,
+              "title": "Chatbot now"
+            },
+          ]
+        }
+      }
+    }
   } else if (payload == 'COMPARE_DIFFERENCE') {
     await sleep(1000)
     response = { 'text': DIFFERENCE_BETWEEN }
@@ -267,4 +305,4 @@ const markSeen = async (sender_psid) => {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-module.exports = { getHomePage, postWebhook, getWebhook }
+module.exports = { getHomePage, postWebhook, getWebhook, convert }
