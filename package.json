@@ -4,6 +4,7 @@
   "description": "https://www.youtube.com/watch?v=_fEwklHvncU",
   "main": "server.js",
   "scripts": {
+    "dist": "mkdir -p dist && cp -R node_modules src .babelrc dist",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --exec babel-node src/server.js",
     "predeploy" : "npm run build",
