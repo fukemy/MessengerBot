@@ -1,4 +1,6 @@
 
+const HOST = 'https://messengerbot.loca.lt'
+// const HOST = 'http://localhost:8081'
 
 const start = () => {
     const textInput = document.getElementById("textValue")
@@ -8,7 +10,7 @@ const start = () => {
         const mp3Div = document.getElementById("mp3Div")
         loader.style.display = 'block'
         mp3Div.style.display = 'none'
-        fetch('https://messengerbot.loca.lt/convert', {
+        fetch(`${HOST}/convert`, {
             method: "post", headers: { "Content-Type": "application/json; charset=utf-8" },
             body: JSON.stringify({
                 text: textData.trim()
@@ -16,7 +18,7 @@ const start = () => {
         }).then((result) => {
             loader.style.display = 'none'
             const audio = document.getElementById("audio")
-            audio.src = `https://messengerbot.loca.lt/result.mp3?t=${new Date().getTime()}`
+            audio.src = `${HOST}/result.mp3?t=${new Date().getTime()}`
             audio.playbackRate = 1.8
             audio.load()
             audio.play()

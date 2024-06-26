@@ -21,15 +21,15 @@ app.listen(localtunnelPort, () => {
     console.log('express ready')
 })
 
-localtunnel({
-    subdomain: 'messengerbot',
-    port: localtunnelPort,
-}).then(tunnel => {
-    console.log(`Localtunnel available at: ${tunnel.url}`);
+// localtunnel({
+//     subdomain: 'messengerbot',
+//     port: localtunnelPort,
+// }).then(tunnel => {
+//     console.log(`Localtunnel available at: ${tunnel.url}`);
 
-}).catch(error => {
-    console.log('tunnel error', error)
-})
+// }).catch(error => {
+//     console.log('tunnel error', error)
+// })
 
 // Verify that the callback came from Facebook.
 const verifyRequestSignature = (req, res, buf) => {

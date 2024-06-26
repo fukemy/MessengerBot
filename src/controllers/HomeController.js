@@ -20,14 +20,17 @@ const fs = require("fs");
 const convert = (req, res) => {
   const { text } = req.body
   let pathToSave = path.join(__dirname, "result.mp3")
-  gtts.save(pathToSave, text).then(() => {
-    res.send('ok')
-  }).catch(error => {
-    console.log('error', error)
+  try {
+    gtts.save(pathToSave, text).then(() => {
+      res.send('ok')
+    }).catch(error => {
+      console.log('error', error)
+      res.status(400).send(error)
+    })
+  } catch (error) {
+    console.log('fatal error', error)
     res.status(400).send(error)
-  })
-
-
+  }
 }
 
 const getHomePage = (req, res) => {

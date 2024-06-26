@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon --exec babel-node src/server.js"
+    "start": "nodemon --exec babel-node src/server.js",
+    "predeploy" : "npm run build",
+    "deploy" : "gh-pages -d build"
   },
   "keywords": [
     "bot",
@@ -30,6 +32,7 @@
     "@babel/core": "^7.24.5",
     "@babel/node": "^7.23.9",
     "@babel/preset-env": "^7.24.5",
+    "gh-pages": "^6.1.1",
     "nodemon": "^3.1.0"
   }
 }
