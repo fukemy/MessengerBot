@@ -44,7 +44,7 @@
     {
         "_id": 8,
         "title": "Hành chính - Kế toán",
-        "asset": "student.png",
+        "asset": "office.png",
         "url": "https://zerochat.us/embedded/chat?c=eyJ0aGVtZSI6ImxpZ2h0IiwiYWdlbnRJZCI6IjY1NkZiWTRYdkUybGNXRlJhWVo5RlEiLCJhZ2VudE5vZGVBZGRyZXNzIjoiaHR0cHM6Ly9hZ25vZGUxLnplcm9jaGF0LnVzIn0%3D"
     }
 ]
