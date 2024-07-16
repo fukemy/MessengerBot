@@ -1,8 +1,11 @@
 import OpenAI from 'openai';
-
+require("dotenv").config();
 const openAI = new OpenAI({
     apiKey: process.env.GPT_KEY
 })
+
+console.log('KEY', process.env.GPT_KEY)
+console.log('MODEL', process.env.GPT_MODEL)
 
 const allChats = []
 
