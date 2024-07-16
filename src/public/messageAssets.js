@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 
 const openAI = new OpenAI({
-    apiKey: 'sk-None-VTpYgIt4XkBUCJsCSN3BT3BlbkFJuN5uXCFoUPsg5sDqC8QO'
+    apiKey: process.env.GPT_KEY
 })
 
 const allChats = []
@@ -266,7 +266,7 @@ const gptResponse = async (id, question) => {
         // console.log('lastmessage', lastMessage)
         const result = await openAI.chat.completions.create({
             messages: indexOfID == -1 ? newContext : allChats[indexOfID].messages,
-            model: 'ft:gpt-3.5-turbo-1106:personal::9lJW1fjP'
+            model: process.env.GPT_MODEL
         })
         const answerText = result.choices[0].message.content
         newContext.push({ role: 'assistant', content: answerText })
