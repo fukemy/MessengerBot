@@ -7,8 +7,8 @@
     "dist": "mkdir -p dist && cp -R node_modules src .babelrc dist",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon --exec babel-node src/server.js",
-    "predeploy" : "npm run build",
-    "deploy" : "gh-pages -d build"
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "keywords": [
     "bot",
@@ -25,6 +25,7 @@
     "install": "^0.13.0",
     "jquery": "^3.7.1",
     "localtunnel": "^2.0.2",
+    "node-fetch": "^2.7.0",
     "npm": "^10.8.1",
     "openai": "^4.47.1",
     "request": "^2.88.2"

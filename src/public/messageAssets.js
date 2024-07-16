@@ -1,9 +1,10 @@
 import OpenAI from 'openai';
 
 const openAI = new OpenAI({
-    apiKey: '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'
+    apiKey: 'sk-None-VTpYgIt4XkBUCJsCSN3BT3BlbkFJuN5uXCFoUPsg5sDqC8QO'
 })
 
+const allChats = []
 
 const welcomeResponse = {
     "attachment": {
@@ -254,18 +255,33 @@ const requireCustomerInfoResponse = {
 
 }
 
-const gptResponse = async (text) => {
+const gptResponse = async (id, question) => {
     try {
-        const lastMessage = [{ role: 'user', content: text }]
+        const indexOfID = allChats.findIndex(c => c.id === id)
+        const newContext = []
+        if (indexOfID == -1) {
+            newContext.push({ "role": "system", "content": "Bạn là 1 trợ lý bán chiếu điều hoà, hãy cố gắng trả lời đầy đủ, nếu không thể trả lời hãy nói: 'Chúng tôi đã nhận được tin và sẽ phản hồi lại sớm!'" })
+        }
+        newContext.push({ role: 'user', content: question })
         // console.log('lastmessage', lastMessage)
         const result = await openAI.chat.completions.create({
-            messages: lastMessage,
-            model: 'gpt-3.5-turbo'
-            // model: 'gpt-4'
+            messages: indexOfID == -1 ? newContext : allChats[indexOfID].messages,
+            model: 'ft:gpt-3.5-turbo-1106:personal::9lJW1fjP'
         })
-        return { "text": result.choices[0].message.content }
+        const answerText = result.choices[0].message.content
+        newContext.push({ role: 'assistant', content: answerText })
+        if (indexOfID >= 0) {
+            allChats[indexOfID] = {
+                id: allChats[indexOfID].id,
+                messages: [...allChats[indexOfID].messages, ...newContext]
+            }
+        } else {
+            allChats.push({ id: id, messages: newContext })
+        }
+        console.log('allChat', JSON.stringify(allChats))
+        return { "text": answerText }
     } catch (error) {
-        console.log('error', error)
+        console.log('gpt error', error.message)
         return { "text": "Chúng tôi đã nhận được tin nhắn của bạn và sẽ phản hồi trong thời gian sớm nhất" }
     }
 }

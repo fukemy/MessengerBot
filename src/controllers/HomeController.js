@@ -17,6 +17,12 @@ const path = require("path")
 const gtts = new Text2Speech('vi')
 const fs = require("fs");
 
+const redirect = (req, res) => {
+  console.log('req', req)
+  const { code } = req.query
+  res.send(`REDIRECT DONE WITH CODE: ${code}`)
+}
+
 const convert = (req, res) => {
   const { text } = req.body
   let pathToSave = path.join(__dirname, "result.mp3")
@@ -31,6 +37,17 @@ const convert = (req, res) => {
     console.log('fatal error', error)
     res.status(400).send(error)
   }
+}
+
+const whatappget = (req, res) => {
+  const body = req.body
+  res.sendStatus(200)
+}
+
+
+const whatapppost = (req, res) => {
+  const body = req.body
+  res.sendStatus(200)
 }
 
 const getHomePage = (req, res) => {
@@ -120,7 +137,7 @@ async function handleMessage(sender_psid, received_message) {
   // Check if the message contains text
   if (received_message.text) {
     // Create the payload for a basic text message
-    response = await gptResponse(received_message.text)
+    response = await gptResponse(sender_psid, received_message.text)
     callSendAPI(sender_psid, response);
   }
   // Sends the response message
@@ -255,7 +272,7 @@ const callSendAPI = async (sender_psid, response) => {
     "json": request_body
   }, (err, res, body) => {
     if (!err) {
-      console.log('message sent!', body)
+      // console.log('message sent!', body)
     } else {
       console.error("Unable to send message:" + err);
     }
@@ -308,4 +325,4 @@ const markSeen = async (sender_psid) => {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-module.exports = { getHomePage, postWebhook, getWebhook, convert }
+module.exports = { getHomePage, postWebhook, getWebhook, convert, redirect, whatappget, whatapppost }
