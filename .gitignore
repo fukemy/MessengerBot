@@ -2,3 +2,5 @@
 yarn.lock
 /src/controllers/result.mp3
 /src/.env
+
+*.env
