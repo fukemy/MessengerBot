@@ -21,7 +21,7 @@
         "_id": 4,
         "title": "Bệnh viện",
         "asset": "hospital.png",
-        "url": "https://zerochat.us/embedded/chat?c=eyJhZ2VudElkIjoiTXZEZlQzeHBta3lZT1BOV0xVZmJCUSIsImFnZW50Tm9kZUFkZHJlc3MiOiJodHRwczovL2Fnbm9kZTEuemVyb2NoYXQudXMiLCJ0aGVtZSI6ImxpZ2h0IiwidXJsIjp7ImJvdEF2YXRhciI6Imh0dHBzOi8vZW5jcnlwdGVkLXRibjIuZ3N0YXRpYy5jb20vaW1hZ2VzP3E9dGJuOkFOZDlHY1MtNnlmREhzcklZM1ZHeHBOWDgxRmlCTUNwRXZlMHQwMEp6ZHpFTUItemRQdVlOa0NTIn19"
+        "url": "https://zerochat.us/embedded/chat?c=eyJ0aGVtZSI6ImxpZ2h0Iiwib3ZlcnJpZGUiOnsiYWNjZW50Q29sb3IiOiIjMDA4MmNjIiwicmVjb21tZW5kIjp7ImNvbG9yIjoiI2ZmZmZmZiJ9fSwiYWdlbnRJZCI6Il96cHNEVDc3YUVTaEdBdk9LOWVkLVEiLCJhZ2VudE5vZGVBZGRyZXNzIjoiaHR0cHM6Ly9hZ25vZGUxLnplcm9jaGF0LnVzIn0%3D"
     },
     {
         "_id": 5,
