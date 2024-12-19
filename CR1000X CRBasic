@@ -8,8 +8,20 @@ Public StaticFreq(8)   'Static (1 Hz output) frequencies
 Public Therm(8)        'Thermistor readings
 Public DynStdDev(8)    'Std Deviation of dynamic freq during the most recent one-second
 
+Dim i As Long
+Dim OutString As String * 1024
+Public timeString As String * 256
+Public dataLoggerConfig As String * 4096
+
+'****REGISTER DATALlOGER/DEVICE
+Const DataloggerName = "CR1000X_1" 'NOTE: ONLY SET ONCE TIME BEFORE RUN, DO NOT CHANGE
+'Device 1
+Const DeviceName = "VWIRESN2748"
+Const DeviceSerial = 2748
 Const CPIAddress As Long = 1
 Const SysOptions As Long = 0
+
+
 'The following arrays are used to configure the GRANITE VWIRE 305. Refer to the CDM_VW300Config
 'instruction used below
 
@@ -48,18 +60,44 @@ DataTable(OneSecData, true, -1)
   'Sample(8,DynStdDev(),IEEE4)        'Std Deviation of dynamic freq (one second)
 EndTable
 
+'****REGISTER SERVER NODE
 Const SERVER_URI = "http://192.168.31.112:6786/"
 Const HEADER = "Content-Type: text/plain"
 Public HttpResponse As String *1000
-Dim i As Long
-Dim OutString As String * 1024
-Public Station_Name As String * 128
-Public timeString As String * 256
+Public SettingResponse As String * 96
 
 BeginProg
-  CPIAddModule (VWIRE305,2749, "VWIRESN2749",CPIAddress)
+  '******Setup datalogger/device******
+  CPIAddModule (VWIRE305,DeviceSerial, DeviceName,CPIAddress)
+
+  dataLoggerConfig = "{"
+  dataLoggerConfig = dataLoggerConfig + """datalogger_name"":""" + DataloggerName + ""","
+  dataLoggerConfig = dataLoggerConfig + """devices"":["
+  '---set devices here, FORMAT: DeviceModel, DeviceName, Serial, CPIAddress
+  '---need modify to send to server to register all devices
+  dataLoggerConfig = dataLoggerConfig + "{"
+  dataLoggerConfig = dataLoggerConfig + """DeviceModel"":""VWIRE305"","
+  dataLoggerConfig = dataLoggerConfig + """DeviceName"":""" + DeviceName + ""","
+  dataLoggerConfig = dataLoggerConfig + """Serial"":""" + DeviceSerial + ""","
+  dataLoggerConfig = dataLoggerConfig + """CPIAddress"":" + CPIAddress + ","
+  dataLoggerConfig = dataLoggerConfig + """Sensors"":["
+  For i = 1 To 8
+    dataLoggerConfig = dataLoggerConfig + "{""id"":" + i + "}"
+    If i < 8 Then
+      dataLoggerConfig = dataLoggerConfig + ","
+    EndIf
+  Next
+  dataLoggerConfig = dataLoggerConfig + "]"
+  dataLoggerConfig = dataLoggerConfig + "}"
+  '---end set devices
+  dataLoggerConfig = dataLoggerConfig + "]"
+  dataLoggerConfig = dataLoggerConfig + "}"
+  '******END******
+  HTTPPost (SERVER_URI + "setdatalogger", dataLoggerConfig, SettingResponse, HEADER)
+
+
+
   CPISpeed(250)            '250 kbps, how fast the datalogger will operate the CPI bus.
-  CPIStatus(timeString)
   'This value may need to be adjusted based on the number of
   'VWIRE 305 modules and the total cable length.  Refer to the
   'VWIRE 305 quick start guide for more information.
@@ -71,14 +109,12 @@ BeginProg
       CDM_VW300Static(CPIAddress, StaticFreq(), Therm(), DynStdDev()) 'Get static data
       CallTable OneSecData
     EndIf
+
     If TimeIntoInterval(0,100,mSec) Then
       timeString = Public.Timestamp(1,1)
 
-      ' Tạo chuỗi JSON để gửi dữ liệu
       OutString = "{"
       OutString = OutString + """time"":""" + timeString + ""","
-
-      ' Thêm dữ liệu Freq vào chuỗi
       OutString = OutString + """freq"":["
       For i = 1 To 8
         OutString = OutString + FormatFloat(Freq(i), "%f")
@@ -88,7 +124,6 @@ BeginProg
       Next
       OutString = OutString + "],"
 
-      ' Thêm dữ liệu Therm vào chuỗi
       OutString = OutString + """therm"":["
       For i = 1 To 8
         OutString = OutString + FormatFloat(Therm(i), "%f")
@@ -97,9 +132,12 @@ BeginProg
         EndIf
       Next
       OutString = OutString + "]"
-
       OutString = OutString + "}"
-      HTTPPost (SERVER_URI, OutString, HttpResponse, HEADER)
-    End If
+
+      'Send to server
+      'If SettingResponse = "OK" Then
+      'HTTPPost (SERVER_URI, OutString, HttpResponse, HEADER)
+      'EndIf
+    EndIf
   NextScan
 EndProg
