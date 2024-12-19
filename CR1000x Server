@@ -1,0 +1,107 @@
+const express = require('express')
+const bodyParser = require('body-parser')
+const fs = require('fs');
+const app = express()
+const port = 6786
+
+app.set('view engine', 'ejs')
+app.use(express.urlencoded({ extended: true }));
+app.use(express.text())
+//app.use(bodyParser.json());
+
+var R_initials = [4858.524, 5377.633, 0, 0, 0, 0, 0, 0]
+var T_initials = [21.3107, 20.98196, 0, 0, 0, 0, 0, 0]
+var G_initials = [0.001307, 0.001307, 0.001307, 0.001307, 0.001307, 0.001307, 0.001307, 0.001307]
+const configFilePath = 'config.json'
+
+fs.readFile(configFilePath, 'utf8', (err, data) => {
+  if (err) {
+    console.warn('Không tìm thấy tệp cấu hình, sử dụng giá trị mặc định');
+    const configData = JSON.stringify({ R_initials, T_initials, G_initials }, null, 2);
+    fs.writeFile(configFilePath, configData, 'utf8', () => {})
+  } else {
+    const config = JSON.parse(data);
+    if (config.R_initials && config.T_initials && config.G_initials) {
+      R_initials = config.R_initials;
+      T_initials = config.T_initials;
+      G_initials = config.G_initials;
+    }
+  }
+});
+
+const M = 0.000281
+const B = 0.813372
+
+
+app.get('/config', (req, res) => {
+  res.render('config', { R_initials, T_initials, G_initials })
+});
+
+app.post('/updateconfig', (req, res) => {
+  for (let i = 0; i < 8; i++) {
+    R_initials[i] = parseFloat(req.body[`R${i}`]) || 0;
+    T_initials[i] = parseFloat(req.body[`T${i}`]) || 0;
+    G_initials[i] = parseFloat(req.body[`G${i}`]) || 0.001307
+  }
+  const configData = JSON.stringify({ R_initials, T_initials, G_initials }, null, 2);
+  fs.writeFile(configFilePath, configData, 'utf8', (err) => {
+    if (err) {
+      console.warn('Lỗi khi ghi vào tệp:', err);
+      res.status(500).send('Có lỗi xảy ra khi lưu cấu hình.');
+      return;
+    }
+
+    res.send(`
+      <h1>Cập nhật thành công!</h1>
+      <p>Giá trị mới của R_initials:</p>
+      <pre>${JSON.stringify(R_initials)}</pre>
+      <p>Giá trị mới của T_initials:</p>
+      <pre>${JSON.stringify(T_initials)}</pre>
+      <p>Giá trị mới của G_initials:</p>
+      <pre>${JSON.stringify(G_initials)}</pre>
+      <a href="/config">Quay lại cấu hình</a>
+    `);
+  });
+});
+
+app.post('/', (req, res) => {
+  try{
+    const data = JSON.parse(req.body)
+    const dateString = data['time']
+    if (dateString.length == 0){
+      console.warn('Time not received')
+    } else if(data['freq'].some(value => isNaN(value))){
+      console.log('found NAN freg', data['freq'])
+    }else if(data['therm'].some(value => isNaN(value))){
+      console.log('found NAN therm', data['therm'])
+    }else{
+      // const formattedDate = dateString.replace(/:(\d{1})$/, ':0$1');
+      // const timestamp = new Date(formattedDate).getTime();
+      const R_list = data['freq']
+      const T_list = data['therm']
+      // console.log('R_list', R_list, 'T_list', T_list)
+      const result = []
+      for(i =0; i< G_initials.length; i++){
+        const R1 = parseFloat(R_list[i])
+        const T1 = parseFloat(T_list[i])
+        G = G_initials[i]
+        T0 = T_initials[i]
+        R0 = R_initials[i]
+        // console.log(R1, R0, T1, T0, G)
+        const K = ((R1 * M) + B) * G
+        const D_corrected = ((R1 - R0) * G) + ((T1 - T0) * K)
+        result.push(D_corrected)
+      }
+  
+      console.log("time:", dateString, '=>', result[0], result[1])
+    }
+    res.send('Data received successfully!');
+  }catch(error){
+    console.log('Error handle data', req.body)
+    res.send('Data received successfully!');
+  }
+})
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
