@@ -1,0 +1,105 @@
+'======= EXAMPLE PROGRAM =======
+'GRANITE VWIRE 305 vibrating-wire analyzer
+'Program to read 200 Hz dynamic data from one GRANITE VWIRE 305 analyzer measuring eight channels
+'Declare Public Variables
+Public Freq(8)         'Dynamic Frequencies
+Public Diag(8) As Long 'Diagnostic Code
+Public StaticFreq(8)   'Static (1 Hz output) frequencies
+Public Therm(8)        'Thermistor readings
+Public DynStdDev(8)    'Std Deviation of dynamic freq during the most recent one-second
+
+Const CPIAddress As Long = 1
+Const SysOptions As Long = 0
+'The following arrays are used to configure the GRANITE VWIRE 305. Refer to the CDM_VW300Config
+'instruction used below
+
+'                                        CH1           CH2           CH3           CH4           CH5           CH6           CH7           CH8
+Dim ChanEnable(8) As Long =   {            1,            1,            1,            1,            1,            1,            1,            1}
+Dim ResonAmp(8) =             {       0.0020,       0.0020,       0.0020,       0.0020,       0.0020,       0.0020,       0.0020,       0.0020}
+Dim MinFreq(8) =              {         1400,         1400,         1400,         1400,         1400,         1400,         1400,         1400}
+Dim MaxFreq(8) =              {         3500,         3500,         3500,         3500,         3500,         3500,         3500,         3500}
+Dim OutFormat(8) As Long =    {            1,            1,            1,            1,            1,            1,            1,            1}
+Dim Mult(8) =                 {     0.001000,     0.001000,     0.001000,     0.001000,     0.001000,     0.001000,     0.001000,     0.001000}
+Dim Offset(8) =               {     0.000000,     0.000000,     0.000000,     0.000000,     0.000000,     0.000000,     0.000000,     0.000000}
+Dim SteinA(8) =               { 1.405100e-03, 1.405100e-03, 1.405100e-03, 1.405100e-03, 1.405100e-03, 1.405100e-03, 1.405100e-03, 1.405100e-03}
+Dim SteinB(8) =               { 2.369000e-04, 2.369000e-04, 2.369000e-04, 2.369000e-04, 2.369000e-04, 2.369000e-04, 2.369000e-04, 2.369000e-04}
+Dim SteinC(8) =               { 1.019000e-07, 1.019000e-07, 1.019000e-07, 1.019000e-07, 1.019000e-07, 1.019000e-07, 1.019000e-07, 1.019000e-07}
+Dim RF_MeanBins(8) As Long =  {            5,            5,            5,            5,            5,            5,            5,            5}
+Dim RF_AmpBins(8) As Long =   {            5,            5,            5,            5,            5,            5,            5,            5}
+Dim RF_LowLim(8) =            {          290,          290,          290,          290,          290,          290,          290,          290}
+Dim RF_HighLim(8) =           {         6000,         6000,         6000,         6000,         6000,         6000,         6000,         6000}
+Dim RF_Hyst(8) =              {         1.00,         1.00,         1.00,         1.00,         1.00,         1.00,         1.00,         1.00}
+Dim RF_Form(8) As Long =      {            0,            0,            0,            0,            0,            0,            0,            0}
+
+'Configure the CDM-VW300 series device
+CDM_VW300Config(VWIRE305,CPIAddress,SysOptions,ChanEnable, _
+ResonAmp,MinFreq,MaxFreq,OutFormat,Mult,Offset,SteinA,SteinB,SteinC, _
+RF_MeanBins,RF_AmpBins,RF_LowLim,RF_HighLim,RF_Hyst,RF_Form)
+
+'Define Data tables
+DataTable(DynamicFreq, true, -1)
+  Sample(8, Freq(), IEEE4)           'Dynamic Frequency (200 Hz output)
+  'Sample(8, Diag(), IEEE4)           'Diagnostic code for the current dynamic reading
+EndTable
+
+DataTable(OneSecData, true, -1)
+  'Sample(8,StaticFreq(),IEEE4)       'Static Frequency reading (1 Hz output)
+  Sample(8,Therm(),IEEE4)            'Thermistor reading : Ohms or DegC
+  'Sample(8,DynStdDev(),IEEE4)        'Std Deviation of dynamic freq (one second)
+EndTable
+
+Const SERVER_URI = "http://192.168.31.112:6786/"
+Const HEADER = "Content-Type: text/plain"
+Public HttpResponse As String *1000
+Dim i As Long
+Dim OutString As String * 1024
+Public Station_Name As String * 128
+Public timeString As String * 256
+
+BeginProg
+  CPIAddModule (VWIRE305,2749, "VWIRESN2749",CPIAddress)
+  CPISpeed(250)            '250 kbps, how fast the datalogger will operate the CPI bus.
+  CPIStatus(timeString)
+  'This value may need to be adjusted based on the number of
+  'VWIRE 305 modules and the total cable length.  Refer to the
+  'VWIRE 305 quick start guide for more information.
+  Scan(5, msec, 500, 0)    '200 Hz / 5 msec scan rate
+    CDM_VW300Dynamic(CPIAddress, Freq(), Diag())   'Get dynamic readings
+    CallTable DynamicFreq
+
+    If TimeIntoInterval(0,1,Sec) Then ' Process static data only once per second
+      CDM_VW300Static(CPIAddress, StaticFreq(), Therm(), DynStdDev()) 'Get static data
+      CallTable OneSecData
+    EndIf
+    If TimeIntoInterval(0,100,mSec) Then
+      timeString = Public.Timestamp(1,1)
+
+      ' Tạo chuỗi JSON để gửi dữ liệu
+      OutString = "{"
+      OutString = OutString + """time"":""" + timeString + ""","
+
+      ' Thêm dữ liệu Freq vào chuỗi
+      OutString = OutString + """freq"":["
+      For i = 1 To 8
+        OutString = OutString + FormatFloat(Freq(i), "%f")
+        If i < 8 Then
+          OutString = OutString + ","
+        EndIf
+      Next
+      OutString = OutString + "],"
+
+      ' Thêm dữ liệu Therm vào chuỗi
+      OutString = OutString + """therm"":["
+      For i = 1 To 8
+        OutString = OutString + FormatFloat(Therm(i), "%f")
+        If i < 8 Then
+          OutString = OutString + ","
+        EndIf
+      Next
+      OutString = OutString + "]"
+
+      OutString = OutString + "}"
+      HTTPPost (SERVER_URI, OutString, HttpResponse, HEADER)
+    End If
+  NextScan
+EndProg
