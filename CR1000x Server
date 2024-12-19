@@ -88,7 +88,7 @@ app.post('/setdatalogger', (req, res) => {
     fs.writeFile(configFilePath, updatedData, 'utf8', () => {})
     res.status(200).send("OK")
   }catch(error){
-    console.log("set datalogger failed", error)
+    console.log("set datalogger failed", error, data)
     res.status(400).send("Error")
   }
 })
