@@ -1,66 +1,121 @@
 const express = require('express')
-const bodyParser = require('body-parser')
+const session = require('express-session');
 const fs = require('fs');
+
 const app = express()
 const port = 6786
+const root_password = 'Vedax@692024#'
 
+app.use(
+  session({
+    secret: '3t23_t23rtb%$@$h23r23r2rg23da', // Khóa bí mật, thay đổi thành giá trị của bạn
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure: false,  // Đặt `true` nếu dùng HTTPS
+      maxAge: 10 * 60 * 1000  // Đặt thời gian hết hạn của cookie là 10 phút (10000ms = 10 phút)
+    }
+  })
+)
 app.set('view engine', 'ejs')
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }))
 app.use(express.text())
 //app.use(bodyParser.json());
 
-var R_initials = [4858.524, 5377.633, 0, 0, 0, 0, 0, 0]
-var T_initials = [21.3107, 20.98196, 0, 0, 0, 0, 0, 0]
-var G_initials = [0.001307, 0.001307, 0.001307, 0.001307, 0.001307, 0.001307, 0.001307, 0.001307]
+var R_initials = [0, 0, 0, 0, 0, 0, 0, 0]
+var T_initials = [0, 0, 0, 0, 0, 0, 0, 0]
+var G_initials = [0, 0, 0, 0, 0, 0, 0, 0]
+var config = []
+
 const configFilePath = 'config.json'
 
 fs.readFile(configFilePath, 'utf8', (err, data) => {
   if (err) {
-    console.warn('Không tìm thấy tệp cấu hình, sử dụng giá trị mặc định');
-    const configData = JSON.stringify({ R_initials, T_initials, G_initials }, null, 2);
-    fs.writeFile(configFilePath, configData, 'utf8', () => {})
+    console.warn('Không tìm thấy tệp cấu hình datalogger nào');
   } else {
-    const config = JSON.parse(data);
-    if (config.R_initials && config.T_initials && config.G_initials) {
-      R_initials = config.R_initials;
-      T_initials = config.T_initials;
-      G_initials = config.G_initials;
-    }
+    config = JSON.parse(data)
   }
 });
 
 const M = 0.000281
 const B = 0.813372
 
-
 app.get('/config', (req, res) => {
-  res.render('config', { R_initials, T_initials, G_initials })
+  if (config.length == 0){
+    res.send(`
+      <h1>Không có dữ liệu cấu hình</h1>
+      <p>Hiện tại chưa có dữ liệu cấu hình từ datalogger gửi lên server.</p>
+    `);
+  }else{
+    if (!req.session.isAuthenticated) {
+      res.render('login', { errorMessage: null })
+      return;
+    }
+    res.render('config', { configData : config })
+  }
 });
 
-app.post('/updateconfig', (req, res) => {
-  for (let i = 0; i < 8; i++) {
-    R_initials[i] = parseFloat(req.body[`R${i}`]) || 0;
-    T_initials[i] = parseFloat(req.body[`T${i}`]) || 0;
-    G_initials[i] = parseFloat(req.body[`G${i}`]) || 0.001307
+app.post('/passwordrequired', (req, res) => {
+  const { password } = req.body
+  if (password === root_password) {
+    req.session.isAuthenticated = true;
+    res.redirect('/config');
+  } else {
+    res.render('login', { errorMessage: 'Mật khẩu không chính xác!' });  // Hiển thị thông báo lỗi
   }
-  const configData = JSON.stringify({ R_initials, T_initials, G_initials }, null, 2);
-  fs.writeFile(configFilePath, configData, 'utf8', (err) => {
+});
+
+app.post('/setdatalogger', (req, res) => {
+  const data = req.body
+  try{
+    const datalogger = JSON.parse(data)
+    const index = config.findIndex(c => c.datalogger_name == datalogger.datalogger_name)
+    if(index != -1){
+      datalogger.devices.forEach(device => {
+        //default for VWIRE305
+        if (device.DeviceModel == "VWIRE305"){
+          device['R_initials'] = R_initials
+          device['T_initials'] = R_initials
+          device['G_initials'] = G_initials  
+        }
+      })
+      config[index] = datalogger
+    }else{
+      config.push(datalogger)
+    }
+    const updatedData = JSON.stringify(config)
+    console.log('setdatalogger', updatedData)
+    fs.writeFile(configFilePath, updatedData, 'utf8', () => {})
+    res.status(200).send("OK")
+  }catch(error){
+    console.log("set datalogger failed", error)
+    res.status(400).send("Error")
+  }
+})
+
+app.post('/updateconfig', (req, res) => {
+  const { dataloggerIndex, deviceIndex } = req.body; // Datalogger và Device cần cập nhật
+  const datalogger = config[dataloggerIndex];
+  const device = datalogger.devices[deviceIndex];
+
+  // Cập nhật giá trị R, T, G
+  for (let i = 0; i < 8; i++) {
+    device.R_initials[i] = parseFloat(req.body[`R${i}`]) || 0;
+    device.T_initials[i] = parseFloat(req.body[`T${i}`]) || 0;
+    device.G_initials[i] = parseFloat(req.body[`G${i}`]) || 0.001307;
+  }
+
+  // Ghi dữ liệu cấu hình mới vào file (giả định là bạn lưu vào một file JSON)
+  const fs = require('fs');
+  fs.writeFile('./config.json', JSON.stringify(config, null, 2), 'utf8', (err) => {
     if (err) {
       console.warn('Lỗi khi ghi vào tệp:', err);
       res.status(500).send('Có lỗi xảy ra khi lưu cấu hình.');
       return;
     }
 
-    res.send(`
-      <h1>Cập nhật thành công!</h1>
-      <p>Giá trị mới của R_initials:</p>
-      <pre>${JSON.stringify(R_initials)}</pre>
-      <p>Giá trị mới của T_initials:</p>
-      <pre>${JSON.stringify(T_initials)}</pre>
-      <p>Giá trị mới của G_initials:</p>
-      <pre>${JSON.stringify(G_initials)}</pre>
-      <a href="/config">Quay lại cấu hình</a>
-    `);
+    // Sử dụng file `updateConfigSuccess.ejs` để hiển thị giao diện
+    res.render('updatedconfig', { datalogger, device });
   });
 });
 
